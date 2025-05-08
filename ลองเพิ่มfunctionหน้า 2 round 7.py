@@ -32,6 +32,7 @@ if page == "📝 กรอกข้อมูลแปลงถ่านเพิ
     for i in range(32):
         col = cols[i % 8]
         with col:
+            st.markdown(f"<div style='text-align: center;'>แปลงถ่านที่ {i+1}</div>", unsafe_allow_html=True)
             value = st.text_input(f"{i+1}", key=f"u{i}", label_visibility="collapsed", placeholder="0.00")
             try:
                 upper.append(float(value))
@@ -44,6 +45,7 @@ if page == "📝 กรอกข้อมูลแปลงถ่านเพิ
     for i in range(32):
         col = cols[i % 8]
         with col:
+            st.markdown(f"<div style='text-align: center;'>แปลงถ่านที่ {i+1}</div>", unsafe_allow_html=True)
             value = st.text_input(f"{i+1}", key=f"l{i}", label_visibility="collapsed", placeholder="0.00")
             try:
                 lower.append(float(value))
