@@ -77,7 +77,8 @@ if page == "📊 หน้าแสดงผล rate และ ชั่วโ�
 
     
     # โหลดค่าจาก Google Sheet (B41-B44)
-    sheet_count, min_required, threshold_percent, alert_threshold_hours,length_threshold = load_config_from_sheet(sh, "Sheet1")
+    sheet_count, min_required, threshold_percent, alert_threshold_hours, length_threshold = load_config_from_sheet(sh, "Sheet1")
+
 
     sheet_names = [ws.title for ws in sh.worksheets()]
     if "Sheet1" in sheet_names:
