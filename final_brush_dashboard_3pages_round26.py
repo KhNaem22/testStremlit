@@ -73,8 +73,19 @@ def load_excel_bytes(sheet_url):
     response = requests.get(sheet_url)
     return response.content
 
+# ด้านบนสุดของไฟล์
+
+import requests
+from io import BytesIO
+
 sheet_id = "1Pd6ISon7-7n7w22gPs4S3I9N7k-6uODdyiTvsfXaSqY"
 sheet_url_export = f"https://docs.google.com/spreadsheets/d/{sheet_id}/export?format=xlsx"
+
+@st.cache_data(ttl=300)
+def load_excel_bytes(sheet_url):
+    response = requests.get(sheet_url)
+    return response.content
+
 xls_bytes = load_excel_bytes(sheet_url_export)
 xls = pd.ExcelFile(BytesIO(xls_bytes), engine="openpyxl")
 
