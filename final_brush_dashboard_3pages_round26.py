@@ -27,17 +27,17 @@ page = st.sidebar.radio("📂 เลือกหน้า", [
     "📈 พล็อตกราฟตามเวลา (แยก Upper และ Lower)"])
 
 
-def load_config_from_sheet(sh, sheet_name):
+def load_config_from_sheet(ws):
+    data = ws.get_all_values()
     try:
-        ws = sh.worksheet(sheet_name)
-        sheet_count = int(ws.acell("B41").value)
-        min_required = int(ws.acell("B42").value)
-        threshold_percent = float(ws.acell("B43").value)
-        alert_threshold_hours = int(ws.acell("B44").value)
-        length_threshold = float(ws.acell("B45").value)
-        return sheet_count, min_required, threshold_percent, alert_threshold_hours,length_threshold
+        sheet_count = int(data[40][1])  # B41 → row 41, col 2 → index [40][1]
+        min_required = int(data[41][1])
+        threshold_percent = float(data[42][1])
+        alert_threshold_hours = int(data[43][1])
+        length_threshold = float(data[44][1])
+        return sheet_count, min_required, threshold_percent, alert_threshold_hours, length_threshold
     except:
-        return 7, 5, 5.0, 50  # fallback default
+        return 7, 5, 5.0, 50, 35.0  # fallback default
 
 
 def save_config_to_sheet(sh, sheet_name, sheet_count, min_required, threshold_percent, alert_threshold_hours,length_threshold):
@@ -91,10 +91,13 @@ if page == "📊 หน้าแสดงผล rate และ ชั่วโ�
     from io import BytesIO
 
     sheet_id = "1Pd6ISon7-7n7w22gPs4S3I9N7k-6uODdyiTvsfXaSqY"
-    sheet_url_export = f"https://docs.google.com/spreadsheets/d/{sheet_id}/export?format=xlsx"
+    @st.cache_data(ttl=300)
+    def load_excel_xls(sheet_url):
+        response = requests.get(sheet_url)
+        return pd.ExcelFile(BytesIO(response.content), engine="openpyxl")
 
-    response = requests.get(sheet_url_export)
-    xls = pd.ExcelFile(BytesIO(response.content), engine="openpyxl")
+    sheet_url_export = f"https://docs.google.com/spreadsheets/d/{sheet_id}/export?format=xlsx"
+    xls = load_excel_xls(sheet_url_export)
 
 
 
@@ -922,8 +925,13 @@ elif page == "📈 พล็อตกราฟตามเวลา (แยก U
 
     # ✅ ใช้ Google Sheet เดียวทุกจุด
     sheet_id = "1Pd6ISon7-7n7w22gPs4S3I9N7k-6uODdyiTvsfXaSqY"
+    @st.cache_data(ttl=300)
+    def load_excel_xls(sheet_url):
+        response = requests.get(sheet_url)
+        return pd.ExcelFile(BytesIO(response.content), engine="openpyxl")
+
     sheet_url_export = f"https://docs.google.com/spreadsheets/d/{sheet_id}/export?format=xlsx"
-    xls = pd.ExcelFile(sheet_url_export)
+    xls = load_excel_xls(sheet_url_export)
 
     service_account_info = st.secrets["gcp_service_account"]
     creds = Credentials.from_service_account_info(service_account_info, scopes=["https://www.googleapis.com/auth/spreadsheets"])
