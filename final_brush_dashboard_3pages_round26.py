@@ -29,14 +29,12 @@ page = st.sidebar.radio("📂 เลือกหน้า", [
 
 def load_config_from_sheet(sh, sheet_name):
     ws = sh.worksheet(sheet_name)
-    data = ws.get_all_values()
-
     try:
-        sheet_count = int(data[40][1])
-        min_required = int(data[41][1])
-        threshold_percent = float(data[42][1])
-        alert_threshold_hours = int(data[43][1])
-        length_threshold = float(data[44][1])
+        sheet_count = int(ws.acell("B41").value)
+        min_required = int(ws.acell("B42").value)
+        threshold_percent = float(ws.acell("B43").value)
+        alert_threshold_hours = int(ws.acell("B44").value)
+        length_threshold = float(ws.acell("B45").value)
         return sheet_count, min_required, threshold_percent, alert_threshold_hours, length_threshold
     except:
         return 7, 5, 5.0, 50, 35.0
