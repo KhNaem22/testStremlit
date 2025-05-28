@@ -6,15 +6,6 @@ import matplotlib.pyplot as plt
 import gspread
 from google.oauth2.service_account import Credentials
 
-@st.cache_data(ttl=120)
-def get_xls_bytes(sheet_url_export):
-    import requests
-    response = requests.get(sheet_url_export)
-    if response.status_code != 200 or b'html' in response.content[:200].lower():
-        st.error("❌ โหลดไฟล์ Excel ไม่สำเร็จ อาจเกิดจาก quota เต็มหรือ sheet ปิดสิทธิ์")
-        st.stop()
-    return response.content
-
 
 
 permanent_fixed_upper = {}
@@ -74,7 +65,7 @@ if page == "📊 หน้าแสดงผล rate และ ชั่วโ�
     service_account_info = st.secrets["gcp_service_account"]
     creds = Credentials.from_service_account_info(service_account_info, scopes=["https://www.googleapis.com/auth/spreadsheets"])
     gc = gspread.authorize(creds)
-    sheet_url = "https://docs.google.com/spreadsheets/d/17NoOHN1YTPYftytZs55zAVKz31-z4t46Cu1DdRtc2LU/edit?usp=sharing"
+    sheet_url = "https://docs.google.com/spreadsheets/d/1Pd6ISon7-7n7w22gPs4S3I9N7k-6uODdyiTvsfXaSqY/edit?usp=sharing"
     try:
         sh = gc.open_by_url(sheet_url)
     except Exception as e:
@@ -99,7 +90,7 @@ if page == "📊 หน้าแสดงผล rate และ ชั่วโ�
     import requests
     from io import BytesIO
 
-    sheet_id = "17NoOHN1YTPYftytZs55zAVKz31-z4t46Cu1DdRtc2LU"
+    sheet_id = "1Pd6ISon7-7n7w22gPs4S3I9N7k-6uODdyiTvsfXaSqY"
     sheet_url_export = f"https://docs.google.com/spreadsheets/d/{sheet_id}/export?format=xlsx"
 
     response = requests.get(sheet_url_export)
@@ -464,7 +455,41 @@ if page == "📊 หน้าแสดงผล rate และ ชั่วโ�
     
     
     
-   #
+        # 🔔 เกณฑ์ชั่วโมงที่ต้องการให้แจ้งเตือนผ่าน LINE (default = 50)
+        alert_threshold_hours = st.number_input("🔔 แจ้งเตือนเมื่อชั่วโมงเหลือน้อยกว่า", min_value=1, value=alert_threshold_hours)        
+            # ใส่ TOKEN และ userId ตรงนี้
+        LINE_TOKEN = "nX2Zf1yODXysP0Gwxtd5fyTIBp8sVCX+3mpLH6AGqAL8O0pTfuWKZtzzXokpsKGZ5sPpheYsV42kqHweOuQHB50Aei2qpd+5ZhuBYYzZxScp+TH1XLD0EDGZv+PV7N8PVV6vstQ4vyCRTmNQaNTT2AdB04t89/1O/w1cDnyilFU="
+        USER_ID = "U56383981a5881b1d444bf50bd9ee6833"
+
+        def send_line_alert(user_id, access_token, message):
+            url = 'https://api.line.me/v2/bot/message/push'
+            headers = {
+                'Content-Type': 'application/json',
+                'Authorization': f'Bearer {access_token}'
+            }
+            body = {
+                "to": user_id,
+                "messages": [{"type": "text", "text": message}]
+            }
+            try:
+                r = requests.post(url, headers=headers, json=body)
+                if r.status_code != 200:
+                    print("❌ LINE Error:", r.text)
+            except Exception as e:
+                print("❌ Exception while sending LINE:", e)
+
+        # 🔔 แจ้งเตือน hour ต่ำกว่า 100
+        for i, hour in enumerate(hour_upper):
+            if hour < alert_threshold_hours and hour > 0:
+                send_line_alert(USER_ID, LINE_TOKEN, f"⚠️ Brush #{i+1} (Upper) เหลือ {hour:.1f} ชั่วโมง")
+                st.write(f"📣 แจ้งเตือน Brush #{i+1} เพราะเหลือ {hour:.1f} ชั่วโมง")
+
+
+        for i, hour in enumerate(hour_lower):
+            if hour < alert_threshold_hours and hour > 0:
+                send_line_alert(USER_ID, LINE_TOKEN, f"⚠️ Brush #{i+1} (Lower) เหลือ {hour:.1f} ชั่วโมง")
+                st.write(f"📣 แจ้งเตือน Brush #{i+1} เพราะเหลือ {hour:.1f} ชั่วโมง")
+
 
     
     
@@ -526,7 +551,7 @@ elif page == "📝 กรอกข้อมูลแปลงถ่านเพ�
     from io import BytesIO
     import requests
 
-    sheet_id = "17NoOHN1YTPYftytZs55zAVKz31-z4t46Cu1DdRtc2LU"
+    sheet_id = "1Pd6ISon7-7n7w22gPs4S3I9N7k-6uODdyiTvsfXaSqY"
     url = f"https://docs.google.com/spreadsheets/d/{sheet_id}/export?format=xlsx"
     response = requests.get(url)
 
@@ -537,7 +562,7 @@ elif page == "📝 กรอกข้อมูลแปลงถ่านเพ�
     service_account_info = st.secrets["gcp_service_account"]
     creds = Credentials.from_service_account_info(service_account_info, scopes=["https://www.googleapis.com/auth/spreadsheets"])
     gc = gspread.authorize(creds)
-    sh = gc.open_by_url("https://docs.google.com/spreadsheets/d/17NoOHN1YTPYftytZs55zAVKz31-z4t46Cu1DdRtc2LU/edit?usp=sharing")
+    sh = gc.open_by_url("https://docs.google.com/spreadsheets/d/1Pd6ISon7-7n7w22gPs4S3I9N7k-6uODdyiTvsfXaSqY/edit?usp=sharing")
 
 # ✅ ดึงเฉพาะชีตที่ชื่อขึ้นต้นด้วย Sheet (หรือเปลี่ยนเป็นตาม pattern ของคุณ เช่น "Sheet1", "Sheet2", ...)
     # ✅ 1. เตรียมรายชื่อชีตทั้งหมดแบบ normalize (รองรับ sheet ชื่อเล็ก/ใหญ่)
@@ -790,7 +815,7 @@ elif page == "📝 กรอกข้อมูลแปลงถ่านเพ�
     import requests
     from io import BytesIO
 
-    sheet_url_export = "https://docs.google.com/spreadsheets/d/17NoOHN1YTPYftytZs55zAVKz31-z4t46Cu1DdRtc2LU/edit?usp=sharing"
+    sheet_url_export = "https://docs.google.com/spreadsheets/d/1Pd6ISon7-7n7w22gPs4S3I9N7k-6uODdyiTvsfXaSqY/export?format=xlsx"
     response = requests.get(sheet_url_export)
     xls = pd.ExcelFile(BytesIO(response.content), engine="openpyxl")
     #https://docs.google.com/spreadsheets/d/1Pd6ISon7-7n7w22gPs4S3I9N7k-6uODdyiTvsfXaSqY/edit?usp=sharing
@@ -896,7 +921,7 @@ elif page == "📈 พล็อตกราฟตามเวลา (แยก U
     st.title("📈 พล็อตกราฟตามเวลา (แยก Upper และ Lower)")
 
     # ✅ ใช้ Google Sheet เดียวทุกจุด
-    sheet_id = "17NoOHN1YTPYftytZs55zAVKz31-z4t46Cu1DdRtc2LU"
+    sheet_id = "1Pd6ISon7-7n7w22gPs4S3I9N7k-6uODdyiTvsfXaSqY"
     sheet_url_export = f"https://docs.google.com/spreadsheets/d/{sheet_id}/export?format=xlsx"
     xls = pd.ExcelFile(sheet_url_export)
 
