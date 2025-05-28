@@ -54,6 +54,30 @@ def save_config_to_sheet(sh, sheet_name, sheet_count, min_required, threshold_pe
 
     except Exception as e:
         st.error(f"❌ ไม่สามารถบันทึก config ลงชีตได้: {e}")
+        
+@st.cache_resource(ttl=300)
+def get_google_sheet():
+    service_account_info = st.secrets["gcp_service_account"]
+    creds = Credentials.from_service_account_info(
+        service_account_info,
+        scopes=["https://www.googleapis.com/auth/spreadsheets"]
+    )
+    gc = gspread.authorize(creds)
+    return gc.open_by_url("https://docs.google.com/spreadsheets/d/1Pd6ISon7-7n7w22gPs4S3I9N7k-6uODdyiTvsfXaSqY")
+
+# ✅ ใช้ทุกหน้าแทน gc.open_by_url()
+sh = get_google_sheet()
+
+@st.cache_data(ttl=300)
+def load_excel_bytes(sheet_url):
+    response = requests.get(sheet_url)
+    return response.content
+
+sheet_id = "1Pd6ISon7-7n7w22gPs4S3I9N7k-6uODdyiTvsfXaSqY"
+sheet_url_export = f"https://docs.google.com/spreadsheets/d/{sheet_id}/export?format=xlsx"
+xls_bytes = load_excel_bytes(sheet_url_export)
+xls = pd.ExcelFile(BytesIO(xls_bytes), engine="openpyxl")
+
 
 
 
@@ -65,12 +89,10 @@ if page == "📊 หน้าแสดงผล rate และ ชั่วโ�
    
 
     # Setup credentials and spreadsheet access
-    service_account_info = st.secrets["gcp_service_account"]
-    creds = Credentials.from_service_account_info(service_account_info, scopes=["https://www.googleapis.com/auth/spreadsheets"])
-    gc = gspread.authorize(creds)
-    sheet_url = "https://docs.google.com/spreadsheets/d/1Pd6ISon7-7n7w22gPs4S3I9N7k-6uODdyiTvsfXaSqY/edit?usp=sharing"
+    
     try:
-        sh = gc.open_by_url(sheet_url)
+        sh = get_google_sheet()
+
     except Exception as e:
         st.error(f"❌ ไม่สามารถเปิด Google Sheet ได้: {e}")
         st.stop()  # หยุดการทำงานหน้าเว็บเพื่อไม่ให้พังต่อ
@@ -101,9 +123,9 @@ if page == "📊 หน้าแสดงผล rate และ ชั่วโ�
         response = requests.get(sheet_url)
         return response.content  # ✅ คืน bytes แทน ExcelFile
 
-    sheet_url_export = f"https://docs.google.com/spreadsheets/d/{sheet_id}/export?format=xlsx"
     xls_bytes = load_excel_bytes(sheet_url_export)
-    xls = pd.ExcelFile(BytesIO(xls_bytes), engine="openpyxl")  # ✅ สร้าง ExcelFile นอก cache
+    xls = pd.ExcelFile(BytesIO(xls_bytes), engine="openpyxl")
+
 
 
 
@@ -561,17 +583,14 @@ elif page == "📝 กรอกข้อมูลแปลงถ่านเพ�
     import requests
 
     sheet_id = "1Pd6ISon7-7n7w22gPs4S3I9N7k-6uODdyiTvsfXaSqY"
-    url = f"https://docs.google.com/spreadsheets/d/{sheet_id}/export?format=xlsx"
-    response = requests.get(url)
 
-    xls = pd.ExcelFile(BytesIO(response.content), engine="openpyxl")
-
+    xls_bytes = load_excel_bytes(sheet_url_export)
+    xls = pd.ExcelFile(BytesIO(xls_bytes), engine="openpyxl")
 
 
-    service_account_info = st.secrets["gcp_service_account"]
-    creds = Credentials.from_service_account_info(service_account_info, scopes=["https://www.googleapis.com/auth/spreadsheets"])
-    gc = gspread.authorize(creds)
-    sh = gc.open_by_url("https://docs.google.com/spreadsheets/d/1Pd6ISon7-7n7w22gPs4S3I9N7k-6uODdyiTvsfXaSqY/edit?usp=sharing")
+
+
+    sh = get_google_sheet()
 
 # ✅ ดึงเฉพาะชีตที่ชื่อขึ้นต้นด้วย Sheet (หรือเปลี่ยนเป็นตาม pattern ของคุณ เช่น "Sheet1", "Sheet2", ...)
     # ✅ 1. เตรียมรายชื่อชีตทั้งหมดแบบ normalize (รองรับ sheet ชื่อเล็ก/ใหญ่)
@@ -936,14 +955,11 @@ elif page == "📈 พล็อตกราฟตามเวลา (แยก U
         response = requests.get(sheet_url)
         return response.content
 
-    sheet_url_export = f"https://docs.google.com/spreadsheets/d/{sheet_id}/export?format=xlsx"
     xls_bytes = load_excel_bytes(sheet_url_export)
     xls = pd.ExcelFile(BytesIO(xls_bytes), engine="openpyxl")
 
-    service_account_info = st.secrets["gcp_service_account"]
-    creds = Credentials.from_service_account_info(service_account_info, scopes=["https://www.googleapis.com/auth/spreadsheets"])
-    gc = gspread.authorize(creds)
-    sh = gc.open_by_url(f"https://docs.google.com/spreadsheets/d/{sheet_id}/edit")
+    sh = get_google_sheet()
+
 
 
     # โหลดค่าความยาวจาก B45
