@@ -27,17 +27,20 @@ page = st.sidebar.radio("📂 เลือกหน้า", [
     "📈 พล็อตกราฟตามเวลา (แยก Upper และ Lower)"])
 
 
-def load_config_from_sheet(ws):
+def load_config_from_sheet(sh, sheet_name):
+    ws = sh.worksheet(sheet_name)
     data = ws.get_all_values()
+
     try:
-        sheet_count = int(data[40][1])  # B41 → row 41, col 2 → index [40][1]
+        sheet_count = int(data[40][1])
         min_required = int(data[41][1])
         threshold_percent = float(data[42][1])
         alert_threshold_hours = int(data[43][1])
         length_threshold = float(data[44][1])
         return sheet_count, min_required, threshold_percent, alert_threshold_hours, length_threshold
     except:
-        return 7, 5, 5.0, 50, 35.0  # fallback default
+        return 7, 5, 5.0, 50, 35.0
+
 
 
 def save_config_to_sheet(sh, sheet_name, sheet_count, min_required, threshold_percent, alert_threshold_hours,length_threshold):
