@@ -969,12 +969,14 @@ elif page == "📈 พล็อตกราฟตามเวลา (แยก U
 
     sh = get_google_sheet()
 
-    ws = sh.worksheet("Sheet1")
+    ws_sheet1 = sh.worksheet("Sheet1")  # ✅ เรียกแค่ครั้งเดียว
+
+
 
     # โหลดค่าความยาวจาก B45
     try:
         
-        length_threshold = float(ws.acell("B45").value)
+        length_threshold = float(ws_sheet1.acell("B45").value)
     except:
         length_threshold = 35.0  # fallback
         
@@ -999,7 +1001,7 @@ elif page == "📈 พล็อตกราฟตามเวลา (แยก U
         
         # ✅ 1. อ่านค่าจาก Google Sheet ก่อน
     try:
-        sheet_save = int(ws.acell("F40").value)
+        sheet_save = int(ws_sheet1.acell("F40").value)
     except:
         sheet_save = 6
 
@@ -1009,10 +1011,10 @@ elif page == "📈 พล็อตกราฟตามเวลา (แยก U
     
         # 📥 โหลดค่าคงที่จาก Sheet1
     try:
-        min_required = int(ws.acell("B42").value)
-        threshold_percent = float(ws.acell("B43").value)
-        alert_threshold_hours = int(ws.acell("B44").value)
-        length_threshold = float(ws.acell("B45").value)
+        min_required = int(ws_sheet1.acell("B42").value)
+        threshold_percent = float(ws_sheet1.acell("B43").value)
+        alert_threshold_hours = int(ws_sheet1.acell("B44").value)
+        length_threshold = float(ws_sheet1.acell("B45").value)
     except:
         min_required = 5
         threshold_percent = 5.0
@@ -1043,7 +1045,7 @@ elif page == "📈 พล็อตกราฟตามเวลา (แยก U
             return default
 
     try:
-        sheet_count_default = safe_int(ws.acell("F40").value)
+        sheet_count_default = safe_int(ws_sheet1.acell("F40").value)
     except:
         sheet_count_default = 6
 
@@ -1053,7 +1055,7 @@ elif page == "📈 พล็อตกราฟตามเวลา (แยก U
 
     # ✅ อัปเดตกลับไปยัง Sheet1!F40 ทันที
     try:
-        ws.update("F40", [[str(sheet_count)]])
+        ws_sheet1.update("F40", [[str(sheet_count)]])
     except Exception as e:
         st.warning(f"⚠️ ไม่สามารถอัปเดต Sheet1!F40 ได้: {e}")
 
