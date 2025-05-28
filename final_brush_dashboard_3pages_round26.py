@@ -932,12 +932,13 @@ elif page == "📈 พล็อตกราฟตามเวลา (แยก U
     # ✅ ใช้ Google Sheet เดียวทุกจุด
     sheet_id = "1Pd6ISon7-7n7w22gPs4S3I9N7k-6uODdyiTvsfXaSqY"
     @st.cache_data(ttl=300)
-    def load_excel_xls(sheet_url):
+    def load_excel_bytes(sheet_url):
         response = requests.get(sheet_url)
-        return pd.ExcelFile(BytesIO(response.content), engine="openpyxl")
+        return response.content
 
     sheet_url_export = f"https://docs.google.com/spreadsheets/d/{sheet_id}/export?format=xlsx"
-    xls = load_excel_xls(sheet_url_export)
+    xls_bytes = load_excel_bytes(sheet_url_export)
+    xls = pd.ExcelFile(BytesIO(xls_bytes), engine="openpyxl")
 
     service_account_info = st.secrets["gcp_service_account"]
     creds = Credentials.from_service_account_info(service_account_info, scopes=["https://www.googleapis.com/auth/spreadsheets"])
