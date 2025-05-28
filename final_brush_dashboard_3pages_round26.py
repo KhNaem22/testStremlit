@@ -969,11 +969,11 @@ elif page == "📈 พล็อตกราฟตามเวลา (แยก U
 
     sh = get_google_sheet()
 
-
+    ws = sh.worksheet("Sheet1")
 
     # โหลดค่าความยาวจาก B45
     try:
-        ws = sh.worksheet("Sheet1")
+        
         length_threshold = float(ws.acell("B45").value)
     except:
         length_threshold = 35.0  # fallback
@@ -999,7 +999,6 @@ elif page == "📈 พล็อตกราฟตามเวลา (แยก U
         
         # ✅ 1. อ่านค่าจาก Google Sheet ก่อน
     try:
-        ws = sh.worksheet("Sheet1")
         sheet_save = int(ws.acell("F40").value)
     except:
         sheet_save = 6
@@ -1010,7 +1009,6 @@ elif page == "📈 พล็อตกราฟตามเวลา (แยก U
     
         # 📥 โหลดค่าคงที่จาก Sheet1
     try:
-        ws = sh.worksheet("Sheet1")
         min_required = int(ws.acell("B42").value)
         threshold_percent = float(ws.acell("B43").value)
         alert_threshold_hours = int(ws.acell("B44").value)
@@ -1045,7 +1043,6 @@ elif page == "📈 พล็อตกราฟตามเวลา (แยก U
             return default
 
     try:
-        ws = sh.worksheet("Sheet1")
         sheet_count_default = safe_int(ws.acell("F40").value)
     except:
         sheet_count_default = 6
