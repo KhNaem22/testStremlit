@@ -28,16 +28,17 @@ page = st.sidebar.radio("📂 เลือกหน้า", [
 
 
 def load_config_from_sheet(sh, sheet_name):
+    ws = sh.worksheet(sheet_name)
     try:
-        ws = sh.worksheet(sheet_name)
         sheet_count = int(ws.acell("B41").value)
         min_required = int(ws.acell("B42").value)
         threshold_percent = float(ws.acell("B43").value)
         alert_threshold_hours = int(ws.acell("B44").value)
         length_threshold = float(ws.acell("B45").value)
-        return sheet_count, min_required, threshold_percent, alert_threshold_hours,length_threshold
+        return sheet_count, min_required, threshold_percent, alert_threshold_hours, length_threshold
     except:
-        return 7, 5, 5.0, 50  # fallback default
+        return 7, 5, 5.0, 50, 35.0
+
 
 
 def save_config_to_sheet(sh, sheet_name, sheet_count, min_required, threshold_percent, alert_threshold_hours,length_threshold):
@@ -51,6 +52,45 @@ def save_config_to_sheet(sh, sheet_name, sheet_count, min_required, threshold_pe
 
     except Exception as e:
         st.error(f"❌ ไม่สามารถบันทึก config ลงชีตได้: {e}")
+        
+@st.cache_resource(ttl=300)
+def get_google_sheet():
+    service_account_info = st.secrets["gcp_service_account"]
+    creds = Credentials.from_service_account_info(
+        service_account_info,
+        scopes=["https://www.googleapis.com/auth/spreadsheets"]
+    )
+    gc = gspread.authorize(creds)
+    return gc.open_by_url("https://docs.google.com/spreadsheets/d/1Pd6ISon7-7n7w22gPs4S3I9N7k-6uODdyiTvsfXaSqY")
+
+# ✅ ใช้ทุกหน้าแทน gc.open_by_url()
+sh = get_google_sheet()
+
+@st.cache_data(ttl=300)
+def load_excel_bytes(sheet_url):
+    response = requests.get(sheet_url)
+    return response.content
+
+@st.cache_data(ttl=300)
+def get_sheet_names_cached():
+    return [ws.title for ws in get_google_sheet().worksheets()]
+
+
+# ด้านบนสุดของไฟล์
+
+import requests
+from io import BytesIO
+
+sheet_id = "1Pd6ISon7-7n7w22gPs4S3I9N7k-6uODdyiTvsfXaSqY"
+sheet_url_export = f"https://docs.google.com/spreadsheets/d/{sheet_id}/export?format=xlsx"
+
+
+xls_bytes = load_excel_bytes(sheet_url_export)
+xls = pd.ExcelFile(BytesIO(xls_bytes), engine="openpyxl")
+
+
+ws_sheet1 = sh.worksheet("Sheet1")  # ✅ เรียกครั้งเดียว
+
 
 
 
@@ -62,21 +102,20 @@ if page == "📊 หน้าแสดงผล rate และ ชั่วโ�
    
 
     # Setup credentials and spreadsheet access
-    service_account_info = st.secrets["gcp_service_account"]
-    creds = Credentials.from_service_account_info(service_account_info, scopes=["https://www.googleapis.com/auth/spreadsheets"])
-    gc = gspread.authorize(creds)
-    sheet_url = "https://docs.google.com/spreadsheets/d/1Pd6ISon7-7n7w22gPs4S3I9N7k-6uODdyiTvsfXaSqY/edit?usp=sharing"
+    
     try:
-        sh = gc.open_by_url(sheet_url)
+        sh = get_google_sheet()
+
     except Exception as e:
         st.error(f"❌ ไม่สามารถเปิด Google Sheet ได้: {e}")
         st.stop()  # หยุดการทำงานหน้าเว็บเพื่อไม่ให้พังต่อ
 
     
     # โหลดค่าจาก Google Sheet (B41-B44)
-    sheet_count, min_required, threshold_percent, alert_threshold_hours,length_threshold = load_config_from_sheet(sh, "Sheet1")
+    sheet_count, min_required, threshold_percent, alert_threshold_hours, length_threshold = load_config_from_sheet(sh, "Sheet1")
 
-    sheet_names = [ws.title for ws in sh.worksheets()]
+
+    sheet_names = get_sheet_names_cached()
     if "Sheet1" in sheet_names:
         sheet_names.remove("Sheet1")
         sheet_names = ["Sheet1"] + sheet_names
@@ -91,10 +130,12 @@ if page == "📊 หน้าแสดงผล rate และ ชั่วโ�
     from io import BytesIO
 
     sheet_id = "1Pd6ISon7-7n7w22gPs4S3I9N7k-6uODdyiTvsfXaSqY"
-    sheet_url_export = f"https://docs.google.com/spreadsheets/d/{sheet_id}/export?format=xlsx"
+    
 
-    response = requests.get(sheet_url_export)
-    xls = pd.ExcelFile(BytesIO(response.content), engine="openpyxl")
+
+    xls_bytes = load_excel_bytes(sheet_url_export)
+    xls = pd.ExcelFile(BytesIO(xls_bytes), engine="openpyxl")
+
 
 
 
@@ -326,35 +367,6 @@ if page == "📊 หน้าแสดงผล rate และ ชั่วโ�
 
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-
-
     st.subheader("📊 กราฟรวม Avg Rate")
     fig_combined = go.Figure()
     fig_combined.add_trace(go.Scatter(x=brush_numbers, y=avg_rate_upper, mode='lines+markers+text', name='Upper Avg Rate', line=dict(color='red'), text=[str(i) for i in brush_numbers], textposition='top center'))
@@ -490,15 +502,7 @@ if page == "📊 หน้าแสดงผล rate และ ชั่วโ�
                 send_line_alert(USER_ID, LINE_TOKEN, f"⚠️ Brush #{i+1} (Lower) เหลือ {hour:.1f} ชั่วโมง")
                 st.write(f"📣 แจ้งเตือน Brush #{i+1} เพราะเหลือ {hour:.1f} ชั่วโมง")
 
-
-    
-    
-    
-    
-    
-    
-    
-    #-------------------------------------------------------------------------------------
+    #----------------------------------------------------------------------------------------------------------------------------
     
 
     
@@ -552,17 +556,14 @@ elif page == "📝 กรอกข้อมูลแปลงถ่านเพ�
     import requests
 
     sheet_id = "1Pd6ISon7-7n7w22gPs4S3I9N7k-6uODdyiTvsfXaSqY"
-    url = f"https://docs.google.com/spreadsheets/d/{sheet_id}/export?format=xlsx"
-    response = requests.get(url)
 
-    xls = pd.ExcelFile(BytesIO(response.content), engine="openpyxl")
-
+    xls_bytes = load_excel_bytes(sheet_url_export)
+    xls = pd.ExcelFile(BytesIO(xls_bytes), engine="openpyxl")
 
 
-    service_account_info = st.secrets["gcp_service_account"]
-    creds = Credentials.from_service_account_info(service_account_info, scopes=["https://www.googleapis.com/auth/spreadsheets"])
-    gc = gspread.authorize(creds)
-    sh = gc.open_by_url("https://docs.google.com/spreadsheets/d/1Pd6ISon7-7n7w22gPs4S3I9N7k-6uODdyiTvsfXaSqY/edit?usp=sharing")
+
+
+    sh = get_google_sheet()
 
 # ✅ ดึงเฉพาะชีตที่ชื่อขึ้นต้นด้วย Sheet (หรือเปลี่ยนเป็นตาม pattern ของคุณ เช่น "Sheet1", "Sheet2", ...)
     # ✅ 1. เตรียมรายชื่อชีตทั้งหมดแบบ normalize (รองรับ sheet ชื่อเล็ก/ใหญ่)
@@ -812,7 +813,14 @@ elif page == "📝 กรอกข้อมูลแปลงถ่านเพ�
 
     # ------------------ แสดงตารางรวม ------------------
     st.subheader("📄 ตารางรวม Upper + Lower (Current / Previous)")
-    xls = pd.ExcelFile("https://docs.google.com/spreadsheets/d/1Pd6ISon7-7n7w22gPs4S3I9N7k-6uODdyiTvsfXaSqY/export?format=xlsx")
+    import requests
+    from io import BytesIO
+
+    sheet_url_export = "https://docs.google.com/spreadsheets/d/1Pd6ISon7-7n7w22gPs4S3I9N7k-6uODdyiTvsfXaSqY/export?format=xlsx"
+    response = requests.get(sheet_url_export)
+    xls = pd.ExcelFile(BytesIO(response.content), engine="openpyxl")
+    #https://docs.google.com/spreadsheets/d/1Pd6ISon7-7n7w22gPs4S3I9N7k-6uODdyiTvsfXaSqY/edit?usp=sharing
+    
    
     # 📌 เลือกชีตที่ต้องการดู
     sheet_options = [ws.title for ws in sh.worksheets() if ws.title.lower().startswith("sheet")]
@@ -893,15 +901,7 @@ elif page == "📝 กรอกข้อมูลแปลงถ่านเพ�
     except Exception as e:
         st.error(f"❌ ไม่สามารถโหลดข้อมูลจากชีตนี้ได้: {e}")
         
-        
-        
-        
-        
-        
-        
-        
-        
-        
+    
         
         
 # ------------------ PAGE 3 ------------------
@@ -915,19 +915,20 @@ elif page == "📈 พล็อตกราฟตามเวลา (แยก U
 
     # ✅ ใช้ Google Sheet เดียวทุกจุด
     sheet_id = "1Pd6ISon7-7n7w22gPs4S3I9N7k-6uODdyiTvsfXaSqY"
-    sheet_url_export = f"https://docs.google.com/spreadsheets/d/{sheet_id}/export?format=xlsx"
-    xls = pd.ExcelFile(sheet_url_export)
 
-    service_account_info = st.secrets["gcp_service_account"]
-    creds = Credentials.from_service_account_info(service_account_info, scopes=["https://www.googleapis.com/auth/spreadsheets"])
-    gc = gspread.authorize(creds)
-    sh = gc.open_by_url(f"https://docs.google.com/spreadsheets/d/{sheet_id}/edit")
+
+    xls_bytes = load_excel_bytes(sheet_url_export)
+    xls = pd.ExcelFile(BytesIO(xls_bytes), engine="openpyxl")
+
+    sh = get_google_sheet()
+
+
 
 
     # โหลดค่าความยาวจาก B45
     try:
-        ws = sh.worksheet("Sheet1")
-        length_threshold = float(ws.acell("B45").value)
+        
+        length_threshold = float(ws_sheet1.acell("B45").value)
     except:
         length_threshold = 35.0  # fallback
         
@@ -936,7 +937,7 @@ elif page == "📈 พล็อตกราฟตามเวลา (แยก U
     threshold = threshold_percent / 100
 
         
-    sheet_names = [ws.title for ws in sh.worksheets()]
+    sheet_names = get_sheet_names_cached()
     filtered_sheet_names = [s for s in sheet_names if s.lower().startswith("sheet") and s.lower() != "sheet1"]
     
     avg_rate_upper = st.session_state.get("upper_avg", [0]*32)
@@ -952,8 +953,7 @@ elif page == "📈 พล็อตกราฟตามเวลา (แยก U
         
         # ✅ 1. อ่านค่าจาก Google Sheet ก่อน
     try:
-        ws = sh.worksheet("Sheet1")
-        sheet_save = int(ws.acell("F40").value)
+        sheet_save = int(ws_sheet1.acell("F40").value)
     except:
         sheet_save = 6
 
@@ -963,11 +963,10 @@ elif page == "📈 พล็อตกราฟตามเวลา (แยก U
     
         # 📥 โหลดค่าคงที่จาก Sheet1
     try:
-        ws = sh.worksheet("Sheet1")
-        min_required = int(ws.acell("B42").value)
-        threshold_percent = float(ws.acell("B43").value)
-        alert_threshold_hours = int(ws.acell("B44").value)
-        length_threshold = float(ws.acell("B45").value)
+        min_required = int(ws_sheet1.acell("B42").value)
+        threshold_percent = float(ws_sheet1.acell("B43").value)
+        alert_threshold_hours = int(ws_sheet1.acell("B44").value)
+        length_threshold = float(ws_sheet1.acell("B45").value)
     except:
         min_required = 5
         threshold_percent = 5.0
@@ -985,18 +984,30 @@ elif page == "📈 พล็อตกราฟตามเวลา (แยก U
     
     
     # 📥 โหลดค่าจำนวนชีตย้อนหลังเริ่มต้นจาก Sheet1!F40
+    def safe_int(val, default=6):
+        try:
+            val_str = str(val).strip()
+            if val_str.isdigit():
+                return int(val_str)
+            elif val_str.replace('.', '', 1).isdigit():
+                return int(float(val_str))
+            else:
+                return default
+        except:
+            return default
+
     try:
-        ws = sh.worksheet("Sheet1")
-        sheet_count_default = int(ws.acell("F40").value)
+        sheet_count_default = safe_int(ws_sheet1.acell("F40").value)
     except:
-        sheet_count_default = 6  # fallback
+        sheet_count_default = 6
+
 
     # 📌 ให้ผู้ใช้กรอกจำนวนชีต (ใช้แบบ number_input)
     sheet_count = st.number_input("📌 เลือกจำนวน Sheet ที่ต้องใช้ ", min_value=1, max_value=len(sheet_names), value=sheet_save)
 
     # ✅ อัปเดตกลับไปยัง Sheet1!F40 ทันที
     try:
-        ws.update("F40", [[str(sheet_count)]])
+        ws_sheet1.update("F40", [[str(sheet_count)]])
     except Exception as e:
         st.warning(f"⚠️ ไม่สามารถอัปเดต Sheet1!F40 ได้: {e}")
 
