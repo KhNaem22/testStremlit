@@ -126,15 +126,11 @@ if page == "📊 หน้าแสดงผล rate และ ชั่วโ�
     
 
 
-    import requests
-    from io import BytesIO
+   
 
-    sheet_id = "1Pd6ISon7-7n7w22gPs4S3I9N7k-6uODdyiTvsfXaSqY"
     
 
 
-    xls_bytes = load_excel_bytes(sheet_url_export)
-    xls = pd.ExcelFile(BytesIO(xls_bytes), engine="openpyxl")
 
 
 
@@ -393,7 +389,6 @@ if page == "📊 หน้าแสดงผล rate และ ชั่วโ�
     #sheet_count = st.number_input("📌 กรอกจำนวนชีตย้อนหลังที่ต้องใช้", min_value=1, max_value=len(sheet_names), value=6)
     try:
         
-        xls = pd.ExcelFile(sheet_url_export, engine='openpyxl')
         
         selected_sheet_names = sheet_names[:sheet_count]
         brush_numbers = list(range(1, 33))
@@ -552,13 +547,9 @@ if page == "📊 หน้าแสดงผล rate และ ชั่วโ�
 elif page == "📝 กรอกข้อมูลแปลงถ่านเพิ่มเติม":
     st.title("📝 กรอกข้อมูลแปรงถ่าน + ชั่วโมง")
     
-    from io import BytesIO
-    import requests
+  
 
-    sheet_id = "1Pd6ISon7-7n7w22gPs4S3I9N7k-6uODdyiTvsfXaSqY"
 
-    xls_bytes = load_excel_bytes(sheet_url_export)
-    xls = pd.ExcelFile(BytesIO(xls_bytes), engine="openpyxl")
 
 
 
@@ -813,13 +804,9 @@ elif page == "📝 กรอกข้อมูลแปลงถ่านเพ�
 
     # ------------------ แสดงตารางรวม ------------------
     st.subheader("📄 ตารางรวม Upper + Lower (Current / Previous)")
-    import requests
-    from io import BytesIO
+ 
 
-    sheet_url_export = "https://docs.google.com/spreadsheets/d/1Pd6ISon7-7n7w22gPs4S3I9N7k-6uODdyiTvsfXaSqY/export?format=xlsx"
     response = requests.get(sheet_url_export)
-    xls = pd.ExcelFile(BytesIO(response.content), engine="openpyxl")
-    #https://docs.google.com/spreadsheets/d/1Pd6ISon7-7n7w22gPs4S3I9N7k-6uODdyiTvsfXaSqY/edit?usp=sharing
     
    
     # 📌 เลือกชีตที่ต้องการดู
@@ -914,11 +901,8 @@ elif page == "📈 พล็อตกราฟตามเวลา (แยก U
     st.title("📈 พล็อตกราฟตามเวลา (แยก Upper และ Lower)")
 
     # ✅ ใช้ Google Sheet เดียวทุกจุด
-    sheet_id = "1Pd6ISon7-7n7w22gPs4S3I9N7k-6uODdyiTvsfXaSqY"
 
 
-    xls_bytes = load_excel_bytes(sheet_url_export)
-    xls = pd.ExcelFile(BytesIO(xls_bytes), engine="openpyxl")
 
     sh = get_google_sheet()
 
