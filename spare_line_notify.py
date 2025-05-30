@@ -358,7 +358,7 @@ if page == "📊 หน้าแสดงผล rate และ ชั่วโ�
     def calculate_hours_safe(current, rate, threshold):
         return [(c - threshold) / r if pd.notna(c) and r and r > 0 and c > threshold else 0 for c, r in zip(current, rate)]
 
-    hour_upper = calculate_hours_safe(upper_current, avg_rate_upper, length_threshold)
+    hour_upper = calculate_hours_safe(upper_current[:32], avg_rate_upper[:32], threshold)
     hour_lower = calculate_hours_safe(lower_current, avg_rate_lower, length_threshold)
 
     
@@ -449,8 +449,8 @@ if page == "📊 หน้าแสดงผล rate และ ชั่วโ�
         st.subheader("📋 ตารางผลการคำนวณ")
         result_df = pd.DataFrame({
             "Brush #": brush_numbers,
-            "Upper Current (F)": upper_current,
-            "Lower Current (C)": lower_current,
+            "Upper Current (F)": upper_current[:32],
+            "Lower Current (C)": lower_current[:32],
             "Avg Rate Upper": avg_rate_upper,
             "Avg Rate Lower": avg_rate_lower,
             "Remaining Hours Upper": hour_upper,
