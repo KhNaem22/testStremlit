@@ -844,8 +844,13 @@ elif page == "📝 กรอกข้อมูลแปลงถ่านเพ�
         #st.dataframe(combined_df, use_container_width=True)
         
         combined_df = pd.concat([lower_df.reset_index(drop=True), upper_df.reset_index(drop=True)], axis=1)
+
+        # กรองบรรทัดที่เป็น NaN ทั้งบรรทัด (เช่น แปรงที่ 33 ไม่มีข้อมูลเลย)
+        combined_df = combined_df.dropna(how='all')
+
         combined_df.insert(0, "Brush No", range(1, len(combined_df) + 1))
         combined_df.set_index("Brush No", inplace=True)
+
         st.dataframe(combined_df, use_container_width=True, height=700)
 
 
