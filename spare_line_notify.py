@@ -358,7 +358,7 @@ if page == "📊 หน้าแสดงผล rate และ ชั่วโ�
     def calculate_hours_safe(current, rate, threshold):
         return [(c - threshold) / r if pd.notna(c) and r and r > 0 and c > threshold else 0 for c, r in zip(current, rate)]
 
-    hour_upper = calculate_hours_safe(upper_current[:32], avg_rate_upper[:32], threshold)
+    hour_upper = calculate_hours_safe(upper_current, avg_rate_upper, length_threshold)
     hour_lower = calculate_hours_safe(lower_current, avg_rate_lower, length_threshold)
 
     
@@ -433,8 +433,8 @@ if page == "📊 หน้าแสดงผล rate และ ชั่วโ�
         avg_rate_lower = lower_avg
 
         df_current = xls.parse(f"Sheet{sheet_count}", header=None, skiprows=2)
-        upper_current = pd.to_numeric(df_current.iloc[2:34, 5], errors='coerce').values[:32]
-        lower_current = pd.to_numeric(df_current.iloc[2:34, 2], errors='coerce').values[:32]
+        upper_current = pd.to_numeric(df_current.iloc[0:32, 5], errors='coerce').values
+        lower_current = pd.to_numeric(df_current.iloc[0:32, 2], errors='coerce').values
 
         def calculate_hours_safe(current, rate, threshold):
             return [(c - threshold) / r if pd.notna(c) and r and r > 0 and c > threshold else 0 for c, r in zip(current, rate)]
@@ -449,8 +449,8 @@ if page == "📊 หน้าแสดงผล rate และ ชั่วโ�
         st.subheader("📋 ตารางผลการคำนวณ")
         result_df = pd.DataFrame({
             "Brush #": brush_numbers,
-            "Upper Current (F)": upper_current[:32],
-            "Lower Current (C)": lower_current[:32],
+            "Upper Current (F)": upper_current,
+            "Lower Current (C)": lower_current,
             "Avg Rate Upper": avg_rate_upper,
             "Avg Rate Lower": avg_rate_lower,
             "Remaining Hours Upper": hour_upper,
@@ -844,19 +844,14 @@ elif page == "📝 กรอกข้อมูลแปลงถ่านเพ�
         #st.dataframe(combined_df, use_container_width=True)
         
         combined_df = pd.concat([lower_df.reset_index(drop=True), upper_df.reset_index(drop=True)], axis=1)
-
-        # กรองบรรทัดที่เป็น NaN ทั้งบรรทัด (เช่น แปรงที่ 33 ไม่มีข้อมูลเลย)
-        combined_df = combined_df.dropna(how='all')
-
         combined_df.insert(0, "Brush No", range(1, len(combined_df) + 1))
         combined_df.set_index("Brush No", inplace=True)
-
         st.dataframe(combined_df, use_container_width=True, height=700)
 
 
 
         st.markdown("### 📊 กราฟรวม Upper และ Lower (Current vs Previous)")
-        brush_labels = [f"Brush {i+1}" for i in range(32)]
+        brush_labels = [f"Brush {i+1}" for i in range(len(combined_df))]
 
         fig = go.Figure()
         fig.add_trace(go.Scatter(
@@ -1088,9 +1083,8 @@ elif page == "📈 พล็อตกราฟตามเวลา (แยก U
 
     # ใช้ current จาก sheet ล่าสุด เช่น Sheet{sheet_count}
     df_current = xls.parse(f"Sheet{sheet_count}", header=None, skiprows=2)
-    upper_current = pd.to_numeric(df_current.iloc[2:34, 5], errors='coerce').values[:32]
-    lower_current = pd.to_numeric(df_current.iloc[2:34, 2], errors='coerce').values[:32]
-
+    upper_current = pd.to_numeric(df_current.iloc[0:32, 5], errors='coerce').values
+    lower_current = pd.to_numeric(df_current.iloc[0:32, 2], errors='coerce').values
 
     time_hours = np.arange(0, 201, 10)
 
