@@ -433,8 +433,8 @@ if page == "📊 หน้าแสดงผล rate และ ชั่วโ�
         avg_rate_lower = lower_avg
 
         df_current = xls.parse(f"Sheet{sheet_count}", header=None, skiprows=2)
-        upper_current = pd.to_numeric(df_current.iloc[0:32, 5], errors='coerce').values
-        lower_current = pd.to_numeric(df_current.iloc[0:32, 2], errors='coerce').values
+        upper_current = pd.to_numeric(df_current.iloc[2:34, 5], errors='coerce').values[:32]
+        lower_current = pd.to_numeric(df_current.iloc[2:34, 2], errors='coerce').values[:32]
 
         def calculate_hours_safe(current, rate, threshold):
             return [(c - threshold) / r if pd.notna(c) and r and r > 0 and c > threshold else 0 for c, r in zip(current, rate)]
@@ -1083,8 +1083,9 @@ elif page == "📈 พล็อตกราฟตามเวลา (แยก U
 
     # ใช้ current จาก sheet ล่าสุด เช่น Sheet{sheet_count}
     df_current = xls.parse(f"Sheet{sheet_count}", header=None, skiprows=2)
-    upper_current = pd.to_numeric(df_current.iloc[0:32, 5], errors='coerce').values
-    lower_current = pd.to_numeric(df_current.iloc[0:32, 2], errors='coerce').values
+    upper_current = pd.to_numeric(df_current.iloc[2:34, 5], errors='coerce').values[:32]
+    lower_current = pd.to_numeric(df_current.iloc[2:34, 2], errors='coerce').values[:32]
+
 
     time_hours = np.arange(0, 201, 10)
 
