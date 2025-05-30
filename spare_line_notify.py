@@ -851,7 +851,7 @@ elif page == "📝 กรอกข้อมูลแปลงถ่านเพ�
 
 
         st.markdown("### 📊 กราฟรวม Upper และ Lower (Current vs Previous)")
-        brush_labels = [f"Brush {i+1}" for i in range(len(combined_df))]
+        brush_labels = [f"Brush {i+1}" for i in range(32)]
 
         fig = go.Figure()
         fig.add_trace(go.Scatter(
